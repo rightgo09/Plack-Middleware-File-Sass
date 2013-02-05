@@ -14,7 +14,7 @@ SYNOPSIS
       };
 
       # Or with Middleware::Static
-      enable "File::Sass", syntax => "scss";
+      enable "File::Sass", syntax => "scss", compass => 1;
       enable "Static", path => qr/\.css$/, root => "./static";
 
 DESCRIPTION
@@ -45,6 +45,9 @@ OPTIONS
     syntax
         Defines which syntax to use. Valid values are *sass* and *scss*.
         Defaults to *sass*.
+    compass
+        Defines whether to use compass. True or false.
+        Defaults to false.
 
 AUTHOR
     Tatsuhiko Miyagawa <miyagawa@bulknews.net>

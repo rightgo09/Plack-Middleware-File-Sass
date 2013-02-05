@@ -5,7 +5,7 @@ use 5.008_001;
 our $VERSION = '0.03';
 
 use parent qw(Plack::Middleware);
-use Plack::Util::Accessor qw(sass syntax);
+use Plack::Util::Accessor qw(sass syntax compass);
 use Plack::Util;
 use Carp ();
 
@@ -26,14 +26,21 @@ sub prepare_app {
     } else {
         Carp::croak("Can't find sass gem nor Text::Sass module");
     }
+
+    if ($self->compass && !`compass -v`) {
+        Carp::croak("Can't find compass gem");
+    }
 }
 
 sub sass_command {
-    my($syntax, $body) = @_;
+    my($syntax, $body, $compass) = @_;
+
+    my @cmd = ("sass", "--stdin");
+    push @cmd, "--scss"    if $syntax eq "scss";
+    push @cmd, "--compass" if $compass;
 
     require IPC::Open3;
-    my $pid = IPC::Open3::open3(my $in, my $out, my $err,
-          "sass", "--stdin", ($syntax eq 'scss' ? '--scss' : ()));
+    my $pid = IPC::Open3::open3(my $in, my $out, my $err, @cmd);
     print $in $body;
     close $in;
 
@@ -65,7 +72,7 @@ sub call {
 
         if ($res->[0] == 200) {
             my $sass; Plack::Util::foreach($res->[2], sub { $sass .= $_[0] });
-            my $css = $self->sass->($syntax, $sass);
+            my $css = $self->sass->($syntax, $sass, $self->compass);
 
             my $h = Plack::Util::headers($res->[1]);
             $h->set('Content-Type' => 'text/css');
@@ -145,6 +152,10 @@ initialization of this middleware component.
 
 Defines which syntax to use. Valid values are I<sass> and
 I<scss>. Defaults to I<sass>.
+
+=item compass
+
+Defines whether to use compass. True or false. Defaults to false.
 
 =back
 
